@@ -1,4 +1,4 @@
-# Tic-Tac-Toe with AI (minimax) - single round, CLI
+# Tic-Tac-Toe with AI (minimax) - CLI with scores and replay
 
 import math
 
@@ -62,13 +62,10 @@ def ai_move(b, ai, human):
     _, move = minimax(b, ai, human, True)
     return move
 
-def main():
+def play_round(human="X", starter="X"):
     board = [str(i+1) for i in range(9)]
-    human = input("Choose your symbol (X goes first) [X/O]: ").strip().upper() or "X"
-    if human not in ("X","O"):
-        human = "X"
     ai = "O" if human == "X" else "X"
-    current = "X"
+    current = starter
     print_board(board)
 
     while True:
@@ -89,14 +86,31 @@ def main():
 
         print_board(board)
         w = winner(board)
-        if w in ("X","O"):
-            print(f"{w} wins!")
-            break
-        elif w == "draw":
-            print("It's a draw.")
-            break
+        if w:
+            return w
 
         current = "O" if current == "X" else "X"
+
+def main():
+    print("Tic-Tac-Toe — Single-player vs AI (scores + replay)")
+    scores = {"X":0, "O":0, "draw":0}
+    human = input("Choose your symbol (X goes first) [X/O]: ").strip().upper() or "X"
+    if human not in ("X","O"):
+        human = "X"
+    starter = "X"
+    while True:
+        res = play_round(human=human, starter=starter)
+        if res in ("X","O"):
+            scores[res] += 1
+            print(f"{res} wins this round!")
+        else:
+            scores["draw"] += 1
+            print("Round is a draw.")
+        print(f"Scores -> X: {scores['X']} | O: {scores['O']} | Draws: {scores['draw']}")
+        again = input("Play again? (Enter=yes / q=quit): ").strip().lower()
+        if again == "q":
+            break
+        starter = "O" if starter == "X" else "X"
 
 if __name__ == "__main__":
     main()
