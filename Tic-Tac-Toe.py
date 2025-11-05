@@ -1,21 +1,11 @@
-# Tic-Tac-Toe with AI (minimax) - CLI with scores and replay
-
-import math
+import tkinter as tk
+from tkinter import messagebox
 
 LINES = [
     (0,1,2),(3,4,5),(6,7,8),
     (0,3,6),(1,4,7),(2,5,8),
     (0,4,8),(2,4,6)
 ]
-
-def print_board(b):
-    print("\n")
-    print(f" {b[0]} | {b[1]} | {b[2]} ")
-    print("---+---+---")
-    print(f" {b[3]} | {b[4]} | {b[5]} ")
-    print("---+---+---")
-    print(f" {b[6]} | {b[7]} | {b[8]} ")
-    print("\n")
 
 def winner(b):
     for a, c, d in LINES:
@@ -25,92 +15,64 @@ def winner(b):
         return "draw"
     return None
 
-def available_moves(b):
-    return [i for i, v in enumerate(b) if v not in ("X","O")]
+class TicTacToeGUI:
+    def __init__(self, root):
+        self.root = root
+        root.title("Tic-Tac-Toe")
 
-def minimax(b, ai, human, is_ai_turn, depth=0):
-    w = winner(b)
-    if w == ai:
-        return 10 - depth, None
-    if w == human:
-        return depth - 10, None
-    if w == "draw":
-        return 0, None
+        self.board = [str(i+1) for i in range(9)]
+        self.buttons = []
+        self.current = "X"
+        self.game_over = False
 
-    if is_ai_turn:
-        best_score = -math.inf
-        best_move = None
-        for m in available_moves(b):
-            b[m] = ai
-            score, _ = minimax(b, ai, human, False, depth+1)
-            b[m] = str(m+1)
-            if score > best_score:
-                best_score, best_move = score, m
-        return best_score, best_move
-    else:
-        best_score = math.inf
-        best_move = None
-        for m in available_moves(b):
-            b[m] = human
-            score, _ = minimax(b, ai, human, True, depth+1)
-            b[m] = str(m+1)
-            if score < best_score:
-                best_score, best_move = score, m
-        return best_score, best_move
+        self.info_var = tk.StringVar(value=f"{self.current} to move.")
+        tk.Label(root, textvariable=self.info_var, font=("Segoe UI", 12)).pack(pady=(10,0))
 
-def ai_move(b, ai, human):
-    _, move = minimax(b, ai, human, True)
-    return move
+        grid = tk.Frame(root)
+        grid.pack(padx=10, pady=10)
 
-def play_round(human="X", starter="X"):
-    board = [str(i+1) for i in range(9)]
-    ai = "O" if human == "X" else "X"
-    current = starter
-    print_board(board)
+        for i in range(9):
+            btn = tk.Button(grid, text=" ", width=4, height=2,
+                            font=("Segoe UI", 24, "bold"),
+                            command=lambda i=i: self.on_click(i))
+            btn.grid(row=i//3, column=i%3, padx=5, pady=5)
+            self.buttons.append(btn)
 
-    while True:
-        if current == human:
-            mv = input(f"Your move ({human}) 1-9: ").strip()
-            if mv not in [str(i) for i in range(1,10)]:
-                print("Invalid input.")
-                continue
-            idx = int(mv) - 1
-            if board[idx] in ("X","O"):
-                print("Spot taken.")
-                continue
-            board[idx] = human
-        else:
-            move = ai_move(board, ai, human)
-            board[move] = ai
-            print(f"AI ({ai}) chooses {move+1}")
+        tk.Button(root, text="Restart", command=self.restart).pack(pady=(0,10))
 
-        print_board(board)
-        w = winner(board)
+    def on_click(self, idx):
+        if self.game_over:
+            return
+        if self.board[idx] in ("X","O"):
+            return
+        self.place(idx, self.current)
+        w = winner(self.board)
         if w:
-            return w
+            self.finish(w)
+            return
+        self.current = "O" if self.current == "X" else "X"
+        self.info_var.set(f"{self.current} to move.")
 
-        current = "O" if current == "X" else "X"
+    def place(self, idx, sym):
+        self.board[idx] = sym
+        self.buttons[idx].configure(text=sym, state="disabled")
 
-def main():
-    print("Tic-Tac-Toe — Single-player vs AI (scores + replay)")
-    scores = {"X":0, "O":0, "draw":0}
-    human = input("Choose your symbol (X goes first) [X/O]: ").strip().upper() or "X"
-    if human not in ("X","O"):
-        human = "X"
-    starter = "X"
-    while True:
-        res = play_round(human=human, starter=starter)
+    def finish(self, res):
+        self.game_over = True
         if res in ("X","O"):
-            scores[res] += 1
-            print(f"{res} wins this round!")
+            self.info_var.set(f"{res} wins! Click Restart.")
         else:
-            scores["draw"] += 1
-            print("Round is a draw.")
-        print(f"Scores -> X: {scores['X']} | O: {scores['O']} | Draws: {scores['draw']}")
-        again = input("Play again? (Enter=yes / q=quit): ").strip().lower()
-        if again == "q":
-            break
-        starter = "O" if starter == "X" else "X"
+            self.info_var.set("Draw. Click Restart.")
+
+    def restart(self):
+        self.board = [str(i+1) for i in range(9)]
+        for b in self.buttons:
+            b.configure(text=" ", state="normal")
+        self.game_over = False
+        self.current = "X"
+        self.info_var.set(f"{self.current} to move.")
 
 if __name__ == "__main__":
-    main()
+    root = tk.Tk()
+    app = TicTacToeGUI(root)
+    root.mainloop()
