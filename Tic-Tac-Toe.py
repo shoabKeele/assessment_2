@@ -1,4 +1,12 @@
-# Tic-Tac-Toe: Simple 2-player terminal version
+# Tic-Tac-Toe with AI (minimax) - single round, CLI
+
+import math
+
+LINES = [
+    (0,1,2),(3,4,5),(6,7,8),
+    (0,3,6),(1,4,7),(2,5,8),
+    (0,4,8),(2,4,6)
+]
 
 def print_board(b):
     print("\n")
@@ -9,47 +17,86 @@ def print_board(b):
     print(f" {b[6]} | {b[7]} | {b[8]} ")
     print("\n")
 
-def check_winner(b):
-    lines = [
-        (0,1,2),(3,4,5),(6,7,8), # rows
-        (0,3,6),(1,4,7),(2,5,8), # cols
-        (0,4,8),(2,4,6)          # diagonals
-    ]
-    for i, j, k in lines:
-        if b[i] == b[j] == b[k] and b[i] in ("X", "O"):
-            return b[i]
-    if all(cell in ("X", "O") for cell in b):
+def winner(b):
+    for a, c, d in LINES:
+        if b[a] == b[c] == b[d] and b[a] in ("X","O"):
+            return b[a]
+    if all(x in ("X","O") for x in b):
         return "draw"
     return None
 
+def available_moves(b):
+    return [i for i, v in enumerate(b) if v not in ("X","O")]
+
+def minimax(b, ai, human, is_ai_turn, depth=0):
+    w = winner(b)
+    if w == ai:
+        return 10 - depth, None
+    if w == human:
+        return depth - 10, None
+    if w == "draw":
+        return 0, None
+
+    if is_ai_turn:
+        best_score = -math.inf
+        best_move = None
+        for m in available_moves(b):
+            b[m] = ai
+            score, _ = minimax(b, ai, human, False, depth+1)
+            b[m] = str(m+1)
+            if score > best_score:
+                best_score, best_move = score, m
+        return best_score, best_move
+    else:
+        best_score = math.inf
+        best_move = None
+        for m in available_moves(b):
+            b[m] = human
+            score, _ = minimax(b, ai, human, True, depth+1)
+            b[m] = str(m+1)
+            if score < best_score:
+                best_score, best_move = score, m
+        return best_score, best_move
+
+def ai_move(b, ai, human):
+    _, move = minimax(b, ai, human, True)
+    return move
+
 def main():
     board = [str(i+1) for i in range(9)]
-    player = "X"
-    print("Tic-Tac-Toe — 2 Players")
-    print("Enter positions 1-9.\n")
+    human = input("Choose your symbol (X goes first) [X/O]: ").strip().upper() or "X"
+    if human not in ("X","O"):
+        human = "X"
+    ai = "O" if human == "X" else "X"
+    current = "X"
     print_board(board)
 
     while True:
-        move = input(f"Player {player}, choose a position (1-9): ").strip()
-        if move not in [str(i) for i in range(1,10)]:
-            print("Invalid input, try again.")
-            continue
-        idx = int(move) - 1
-        if board[idx] in ("X", "O"):
-            print("That spot is taken. Try another.")
-            continue
-        board[idx] = player
+        if current == human:
+            mv = input(f"Your move ({human}) 1-9: ").strip()
+            if mv not in [str(i) for i in range(1,10)]:
+                print("Invalid input.")
+                continue
+            idx = int(mv) - 1
+            if board[idx] in ("X","O"):
+                print("Spot taken.")
+                continue
+            board[idx] = human
+        else:
+            move = ai_move(board, ai, human)
+            board[move] = ai
+            print(f"AI ({ai}) chooses {move+1}")
+
         print_board(board)
-
-        result = check_winner(board)
-        if result == "X" or result == "O":
-            print(f"🎉 Player {result} wins!")
+        w = winner(board)
+        if w in ("X","O"):
+            print(f"{w} wins!")
             break
-        elif result == "draw":
-            print("It's a draw!")
+        elif w == "draw":
+            print("It's a draw.")
             break
 
-        player = "O" if player == "X" else "X"
+        current = "O" if current == "X" else "X"
 
 if __name__ == "__main__":
     main()
