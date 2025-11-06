@@ -1,3 +1,9 @@
+"""
+I acknowledge the use of Microsoft Copilot to co-create code in this file
+(e.g., initial CLI version, minimax AI, and Tkinter GUI integration).
+"""
+
+
 import tkinter as tk
 from tkinter import messagebox
 import math
